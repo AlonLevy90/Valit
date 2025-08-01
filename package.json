@@ -1,0 +1,25 @@
+{
+  "name": "valit",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx src/index.ts",
+    "dev": "nodemon --exec tsx src/index.ts",
+    "test": "tsx src/__tests__/validator.test.ts",
+    "test:watch": "nodemon --exec tsx src/__tests__/validator.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "@vitest/ui": "^3.2.4",
+    "nodemon": "^3.1.10",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
