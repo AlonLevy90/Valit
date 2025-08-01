@@ -28,5 +28,4 @@ function BooleanValidator() {
     },
   };
 }
-
 export default BooleanValidator;

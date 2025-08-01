@@ -1,3 +1,4 @@
+import { errorBuilder } from "../error/errorBuilder";
 import { Schema, StringSchema, ValidationResult } from "../types";
 
 export function string(): Schema<string> {
@@ -11,13 +12,12 @@ export function string(): Schema<string> {
           valid: true,
           value: input,
         };
-      } else if (input === undefined) {
+      } else if (!input || typeof input !== "string") {
         return {
           valid: false,
-          error: [{ message: "Required", path: [], type: "required" }],
+          error: [errorBuilder("required", ["string", typeof input], [])],
         };
       }
-
       for (const rule of rules) {
         const result = rule(input);
         if (result) {
@@ -35,11 +35,11 @@ export function string(): Schema<string> {
           return {
             valid: false,
             error: [
-              {
-                message: `Must be at least ${min} characters`,
-                path: [],
-                type: "min",
-              },
+              errorBuilder(
+                "ruleViolation",
+                [`minimum of ${min} characters`, `${input.length} characters`],
+                [],
+              ),
             ],
           };
         }
@@ -53,11 +53,11 @@ export function string(): Schema<string> {
           return {
             valid: false,
             error: [
-              {
-                message: `Must be at most ${max} characters`,
-                path: [],
-                type: "max",
-              },
+              errorBuilder(
+                "ruleViolation",
+                [`maximum of ${max} characters`, `${input.length} characters`],
+                [],
+              ),
             ],
           };
         }

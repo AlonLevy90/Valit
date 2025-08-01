@@ -1,23 +1,38 @@
-import { Validator } from "../types";
-import markOptional from "./baseValidator";
+import { NumberSchema } from "../types";
 
 function numberValidator() {
   const rules: ((value: number) => string | undefined)[] = [];
+  const isOptional = false;
 
-  const validator: Validator<number> = {
-    validate(value: unknown) {
+  const schema: NumberSchema = {
+    validate(value: number) {
+      if (isOptional && value === undefined) {
+        return { valid: true, value };
+      } else if (!value) {
+        return {
+          valid: false,
+          error: [
+            {
+              message: `Expected a number, got ${typeof value}`,
+              path: [],
+              type: "required",
+            },
+          ],
+        };
+      }
       if (typeof value !== "number") {
         return {
           valid: false,
-          error: `Expected a number, got ${typeof value}`,
+          error: [
+            {
+              message: `Expected a number, got ${typeof value}`,
+              path: [],
+              type: "",
+            },
+          ],
         };
       }
-      for (const rule of rules) {
-        const error = rule(value);
-        if (error) {
-          return { valid: false, error };
-        }
-      }
+
       return { valid: true, value };
     },
   };
@@ -46,5 +61,4 @@ function numberValidator() {
     },
   };
 }
-
 export default numberValidator;

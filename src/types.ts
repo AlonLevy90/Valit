@@ -1,8 +1,4 @@
-interface ValidationError {
-  message: string;
-  path: string[];
-  type: string;
-}
+import { ValidationError } from "./error/errorType";
 
 interface ValidationResult<T> {
   valid: boolean;
@@ -21,4 +17,16 @@ interface StringSchema extends Schema<string> {
   optional(): StringSchema;
 }
 
-export { Schema, StringSchema, ValidationError, ValidationResult };
+interface NumberSchema extends Schema<number> {
+  min(min: number): NumberSchema;
+  max(max: number): NumberSchema;
+  optional(): NumberSchema;
+}
+
+export {
+  NumberSchema,
+  Schema,
+  StringSchema,
+  ValidationError,
+  ValidationResult,
+};
