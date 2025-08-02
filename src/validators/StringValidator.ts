@@ -1,12 +1,12 @@
 import { errorBuilder } from "../error/errorBuilder";
-import { Schema, StringSchema, ValidationResult } from "../types";
+import { StringSchema, ValidationResult } from "../types";
 
-export default function stringValidator(): Schema<string> {
+export default function stringValidator(): StringSchema {
   const rules: ((input: string) => ValidationResult<string> | undefined)[] = [];
   let isOptional = false;
 
   const schema: StringSchema = {
-    //TODO extract common code with basic validators 
+    //TODO extract common code with basic validators
     // TODO consider decorator for optional and other rule
     validate(input: string): ValidationResult<string> {
       if (isOptional && input === undefined) {
@@ -14,10 +14,15 @@ export default function stringValidator(): Schema<string> {
           valid: true,
           value: input,
         };
-      } else if (!input || typeof input !== "string") {
+      } else if (input === undefined || input === null) {
         return {
           valid: false,
           error: [errorBuilder("required", ["string", typeof input], [])],
+        };
+      } else if (typeof input !== "string") {
+        return {
+          valid: false,
+          error: [errorBuilder("typeMismatch", ["string", typeof input], [])],
         };
       }
       for (const rule of rules) {

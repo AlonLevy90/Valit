@@ -1,7 +1,7 @@
 import { errorBuilder } from "../error/errorBuilder";
 import { BooleanSchema, ValidationError, ValidationResult } from "../types";
 
-export default function BooleanValidator() {
+export default function BooleanValidator(): BooleanSchema {
   const rules: ((value: unknown) => ValidationError | undefined)[] = [];
   let isOptional = false;
 
@@ -9,7 +9,7 @@ export default function BooleanValidator() {
     validate(input): ValidationResult<boolean> {
       if (isOptional && !input) {
         return { valid: true, value: input };
-      } else if (!input) {
+      } else if (input === undefined || input === null) {
         return {
           valid: false,
           error: [errorBuilder("required", ["boolean", typeof input], [])],

@@ -25,10 +25,11 @@ export default function objectValidator(props: objectProps): ObjectSchema {
       for (const [key, validator] of Object.entries(props)) {
         const result = validator.validate(input[key]);
         if (result.error) {
+          console.log("in result");
           result.error.forEach((error) => {
             error.path.unshift(key);
-            return result;
           });
+          return { valid: false, error: result.error };
         }
       }
       return { valid: true, data: input };

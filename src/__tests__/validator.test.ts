@@ -1,10 +1,8 @@
 // Simple test runner without external dependencies
-import {
-  BooleanValidator,
-  NumberValidator,
-  StringValidator,
-  validate,
-} from "../validators";
+import stringValidator from "../validators/StringValidator";
+import BooleanValidator from "../validators/booleanValidator";
+import numberValidator from "../validators/numberValidator";
+import objectValidator from "../validators/objectValidator";
 
 // Test utilities
 function assertEqual(actual: any, expected: any, message: string) {
@@ -29,21 +27,6 @@ function assertFalse(condition: boolean, message: string) {
   }
 }
 
-function assertThrows(fn: () => void, expectedError: string) {
-  try {
-    fn();
-    throw new Error(
-      `Expected function to throw "${expectedError}" but it didn't throw`,
-    );
-  } catch (error: any) {
-    if (!error.message.includes(expectedError)) {
-      throw new Error(
-        `Expected error to contain "${expectedError}" but got "${error.message}"`,
-      );
-    }
-  }
-}
-
 // Test results
 let passedTests = 0;
 let failedTests = 0;
@@ -64,227 +47,382 @@ console.log("🧪 Running Validator Tests...\n");
 // StringValidator Tests
 console.log("📝 StringValidator Tests:");
 
-runTest("should validate string with maxLength", () => {
-  const validator = new StringValidator("hello", "Name");
-  const result = validator.maxLength(10).validate();
-  assertTrue(
-    result.isValid === true,
-    "Should be valid when string is within max length",
-  );
-  assertEqual(result.errors.length, 0, "Should have no errors");
+runTest("should validate valid string", () => {
+  const validator = stringValidator();
+  const result = validator.validate("hello");
+  assertTrue(result.valid === true, "Should be valid for valid string");
+  assertEqual(result.error, undefined, "Should have no errors");
 });
 
-runTest("should fail when string exceeds maxLength", () => {
-  const validator = new StringValidator("hello world", "Name");
-  const result = validator.maxLength(5).validate();
+runTest("should validate string with min length", () => {
+  const validator = stringValidator().min(3);
+  const result = validator.validate("hello");
   assertTrue(
-    result.isValid === false,
+    result.valid === true,
+    "Should be valid when string meets min length",
+  );
+  assertEqual(result.error, undefined, "Should have no errors");
+});
+
+runTest("should fail when string is too short", () => {
+  const validator = stringValidator().min(5);
+  const result = validator.validate("hi");
+  assertTrue(
+    result.valid === false,
+    "Should be invalid when string is too short",
+  );
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
+  assertTrue(
+    result.error![0].type === "ruleViolation",
+    "Error should be ruleViolation type",
+  );
+});
+
+runTest("should validate string with max length", () => {
+  const validator = stringValidator().max(10);
+  const result = validator.validate("hello");
+  assertTrue(
+    result.valid === true,
+    "Should be valid when string is within max length",
+  );
+  assertEqual(result.error, undefined, "Should have no errors");
+});
+
+runTest("should fail when string exceeds max length", () => {
+  const validator = stringValidator().max(5);
+  const result = validator.validate("hello world");
+  assertTrue(
+    result.valid === false,
     "Should be invalid when string exceeds max length",
   );
-  assertEqual(result.errors.length, 1, "Should have one error");
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
   assertTrue(
-    result.errors[0].includes("greater than max length"),
-    "Error message should mention max length",
+    result.error![0].type === "ruleViolation",
+    "Error should be ruleViolation type",
   );
 });
 
 runTest("should handle undefined optional field", () => {
-  const validator = new StringValidator(undefined, "Name");
-  const result = validator.optional().maxLength(10).validate();
+  const validator = stringValidator().optional();
+  const result = validator.validate(undefined as any);
   assertTrue(
-    result.isValid === true,
+    result.valid === true,
     "Should be valid for optional undefined field",
   );
-  assertEqual(result.errors.length, 0, "Should have no errors");
+  assertEqual(result.error, undefined, "Should have no errors");
 });
 
 runTest("should fail undefined required field", () => {
-  const validator = new StringValidator(undefined, "Name");
-  const result = validator.required().maxLength(10).validate();
+  const validator = stringValidator();
+  const result = validator.validate(undefined as any);
   assertTrue(
-    result.isValid === false,
+    result.valid === false,
     "Should be invalid for required undefined field",
   );
-  assertEqual(result.errors.length, 1, "Should have one error");
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
   assertTrue(
-    result.errors[0].includes("required"),
-    "Error message should mention required",
+    result.error![0].type === "required",
+    "Error should be required type",
+  );
+});
+
+runTest("should fail for wrong type", () => {
+  const validator = stringValidator();
+  const result = validator.validate(123 as any);
+  assertTrue(result.valid === false, "Should be invalid for wrong type");
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
+  assertTrue(
+    result.error![0].type === "typeMismatch",
+    "Error should be typeMismatch type for wrong type",
   );
 });
 
 runTest("should chain validation methods", () => {
-  const validator = new StringValidator("hello", "Name");
-  const result = validator.required().maxLength(10).validate();
-  assertTrue(result.isValid === true, "Should be valid when chaining methods");
+  const validator = stringValidator().min(3).max(10);
+  const result = validator.validate("hello");
+  assertTrue(result.valid === true, "Should be valid when chaining methods");
 });
 
 // NumberValidator Tests
 console.log("\n🔢 NumberValidator Tests:");
 
+runTest("should validate valid number", () => {
+  const validator = numberValidator();
+  const result = validator.validate(42);
+  assertTrue(result.valid === true, "Should be valid for valid number");
+  assertEqual(result.error, undefined, "Should have no errors");
+});
+
 runTest("should validate number with min", () => {
-  const validator = new NumberValidator(10, "Age");
-  const result = validator.min(5).validate();
+  const validator = numberValidator().min(5);
+  const result = validator.validate(10);
   assertTrue(
-    result.isValid === true,
+    result.valid === true,
     "Should be valid when number is above minimum",
   );
-  assertEqual(result.errors.length, 0, "Should have no errors");
+  assertEqual(result.error, undefined, "Should have no errors");
 });
 
 runTest("should fail when number is below min", () => {
-  const validator = new NumberValidator(3, "Age");
-  const result = validator.min(5).validate();
+  const validator = numberValidator().min(5);
+  const result = validator.validate(3);
   assertTrue(
-    result.isValid === false,
+    result.valid === false,
     "Should be invalid when number is below minimum",
   );
-  assertEqual(result.errors.length, 1, "Should have one error");
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
   assertTrue(
-    result.errors[0].includes("less than minimum"),
-    "Error message should mention minimum",
+    result.error![0].type === "ruleViolation",
+    "Error should be ruleViolation type",
   );
 });
 
 runTest("should validate number with max", () => {
-  const validator = new NumberValidator(10, "Age");
-  const result = validator.max(15).validate();
+  const validator = numberValidator().max(15);
+  const result = validator.validate(10);
   assertTrue(
-    result.isValid === true,
+    result.valid === true,
     "Should be valid when number is below maximum",
   );
-  assertEqual(result.errors.length, 0, "Should have no errors");
+  assertEqual(result.error, undefined, "Should have no errors");
 });
 
 runTest("should fail when number exceeds max", () => {
-  const validator = new NumberValidator(20, "Age");
-  const result = validator.max(15).validate();
+  const validator = numberValidator().max(15);
+  const result = validator.validate(20);
   assertTrue(
-    result.isValid === false,
+    result.valid === false,
     "Should be invalid when number exceeds maximum",
   );
-  assertEqual(result.errors.length, 1, "Should have one error");
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
   assertTrue(
-    result.errors[0].includes("greater than maximum"),
-    "Error message should mention maximum",
+    result.error![0].type === "ruleViolation",
+    "Error should be ruleViolation type",
   );
 });
 
 runTest("should handle undefined optional number", () => {
-  const validator = new NumberValidator(undefined, "Age");
-  const result = validator.optional().min(5).validate();
+  const validator = numberValidator().optional();
+  const result = validator.validate(undefined as any);
   assertTrue(
-    result.isValid === true,
+    result.valid === true,
     "Should be valid for optional undefined number",
   );
-  assertEqual(result.errors.length, 0, "Should have no errors");
+  assertEqual(result.error, undefined, "Should have no errors");
+});
+
+runTest("should fail undefined required number", () => {
+  const validator = numberValidator();
+  const result = validator.validate(undefined as any);
+  assertTrue(
+    result.valid === false,
+    "Should be invalid for required undefined number",
+  );
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
+  assertTrue(
+    result.error![0].type === "required",
+    "Error should be required type",
+  );
+});
+
+runTest("should fail for wrong type", () => {
+  const validator = numberValidator();
+  const result = validator.validate("not a number" as any);
+  assertTrue(result.valid === false, "Should be invalid for wrong type");
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
+  assertTrue(
+    result.error![0].type === "typeMismatch",
+    "Error should be typeMismatch type",
+  );
 });
 
 // BooleanValidator Tests
 console.log("\n🔘 BooleanValidator Tests:");
 
-runTest("should create boolean validator", () => {
-  const validator = new BooleanValidator(true, "Active");
+runTest("should validate valid boolean", () => {
+  const validator = BooleanValidator();
+  const result = validator.validate(true);
+  assertTrue(result.valid === true, "Should be valid for valid boolean");
+  assertEqual(result.error, undefined, "Should have no errors");
+});
+
+runTest("should validate false boolean", () => {
+  const validator = BooleanValidator();
+  const result = validator.validate(false);
+  assertTrue(result.valid === true, "Should be valid for false boolean");
+  assertEqual(result.error, undefined, "Should have no errors");
+});
+
+runTest("should handle undefined optional boolean", () => {
+  const validator = BooleanValidator().optional();
+  const result = validator.validate(undefined as any);
   assertTrue(
-    validator instanceof BooleanValidator,
-    "Should create BooleanValidator instance",
+    result.valid === true,
+    "Should be valid for optional undefined boolean",
+  );
+  assertEqual(result.error, undefined, "Should have no errors");
+});
+
+runTest("should fail undefined required boolean", () => {
+  const validator = BooleanValidator();
+  const result = validator.validate(undefined as any);
+  assertTrue(
+    result.valid === false,
+    "Should be invalid for required undefined boolean",
+  );
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
+  assertTrue(
+    result.error![0].type === "required",
+    "Error should be required type",
   );
 });
 
-runTest("should handle undefined boolean", () => {
-  const validator = new BooleanValidator(undefined, "Active");
-  const result = validator.validate();
+runTest("should fail for wrong type", () => {
+  const validator = BooleanValidator();
+  const result = validator.validate("true" as any);
+  assertTrue(result.valid === false, "Should be invalid for wrong type");
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
   assertTrue(
-    result.isValid === undefined,
-    "Should have undefined validity for new validator",
+    result.error![0].type === "typeMismatch",
+    "Error should be typeMismatch type",
   );
 });
 
-// Schema Validation Tests
-console.log("\n📋 Schema Validation Tests:");
+// ObjectValidator Tests
+console.log("\n📋 ObjectValidator Tests:");
 
-runTest("should validate simple schema", () => {
-  const schema = {
-    name: new StringValidator("John", "Name").required().maxLength(10),
-    age: new NumberValidator(25, "Age").required().min(18).max(100),
-  };
-
-  const result = validate(schema, { name: "John", age: 25 });
-  assertTrue(result.isValid === true, "Should be valid for correct data");
-  assertEqual(result.errors.length, 0, "Should have no errors");
+runTest("should validate valid object", () => {
+  const validator = objectValidator({
+    name: stringValidator().min(2),
+    age: numberValidator().min(0),
+  });
+  const result = validator.validate({ name: "John", age: 25 });
+  assertTrue(result.valid === true, "Should be valid for valid object");
+  assertEqual(result.error, undefined, "Should have no errors");
 });
 
-runTest("should fail schema with multiple errors", () => {
-  const schema = {
-    name: new StringValidator("Very Long Name That Exceeds Limit", "Name")
-      .required()
-      .maxLength(10),
-    age: new NumberValidator(15, "Age").required().min(18).max(100),
-  };
-
-  const result = validate(schema, { name: "Very Long Name", age: 15 });
-  assertTrue(result.isValid === false, "Should be invalid for incorrect data");
-  assertTrue(result.errors.length >= 2, "Should have multiple errors");
-});
-
-runTest("should handle mixed optional and required fields", () => {
-  const schema = {
-    name: new StringValidator("John", "Name").required().maxLength(10),
-    email: new StringValidator(undefined, "Email").optional().maxLength(50),
-  };
-
-  const result = validate(schema, { name: "John" });
+runTest("should fail object with invalid fields", () => {
+  const validator = objectValidator({
+    name: stringValidator().min(5),
+    age: numberValidator().min(18),
+  });
+  const result = validator.validate({ name: "Jo", age: 15 });
   assertTrue(
-    result.isValid === true,
-    "Should be valid with optional undefined field",
+    result.valid === false,
+    "Should be invalid for object with invalid fields",
   );
-  assertEqual(result.errors.length, 0, "Should have no errors");
+  assertTrue(result.error! && result.error.length > 0, "Should have errors");
 });
 
-// Error Handling Tests
-console.log("\n⚠️ Error Handling Tests:");
-
-runTest("should throw error when calling optional() twice", () => {
-  const validator = new StringValidator("test", "Name");
-  validator.optional();
-  assertThrows(() => validator.optional(), "isRequired is already set");
+runTest("should handle undefined optional object", () => {
+  const validator = objectValidator({
+    name: stringValidator().min(2),
+    age: numberValidator().min(0),
+  }).optional();
+  const result = validator.validate(undefined as any);
+  assertTrue(
+    result.valid === true,
+    "Should be valid for optional undefined object",
+  );
+  assertEqual(result.error, undefined, "Should have no errors");
 });
 
-runTest("should throw error when calling required() twice", () => {
-  const validator = new StringValidator("test", "Name");
-  validator.required();
-  assertThrows(() => validator.required(), "isRequired is already set");
+runTest("should fail undefined required object", () => {
+  const validator = objectValidator({
+    name: stringValidator().min(2),
+    age: numberValidator().min(0),
+  });
+  const result = validator.validate(undefined as any);
+  assertTrue(
+    result.valid === false,
+    "Should be invalid for required undefined object",
+  );
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
+  assertTrue(
+    result.error![0].type === "typeMismatch",
+    "Error should be typeMismatch type",
+  );
 });
 
-runTest("should throw error when mixing optional() and required()", () => {
-  const validator = new StringValidator("test", "Name");
-  validator.optional();
-  assertThrows(() => validator.required(), "isRequired is already set");
+runTest("should fail for wrong type", () => {
+  const validator = objectValidator({
+    name: stringValidator().min(2),
+    age: numberValidator().min(0),
+  });
+  const result = validator.validate("not an object" as any);
+  assertTrue(result.valid === false, "Should be invalid for wrong type");
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
+  assertTrue(
+    result.error![0].type === "typeMismatch",
+    "Error should be typeMismatch type",
+  );
+});
+
+// Error Structure Tests
+console.log("\n⚠️ Error Structure Tests:");
+
+runTest("should have consistent error structure", () => {
+  const validator = stringValidator().min(5);
+  const result = validator.validate("hi");
+  assertTrue(result.valid === false, "Should be invalid");
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
+
+  const error = result.error![0];
+  assertTrue(typeof error.message === "string", "Error should have message");
+  assertTrue(Array.isArray(error.path), "Error should have path array");
+  assertTrue(typeof error.type === "string", "Error should have type");
+});
+
+runTest("should include path information in nested object errors", () => {
+  const validator = objectValidator({
+    name: stringValidator().min(5),
+    age: numberValidator().min(18),
+  });
+  const result = validator.validate({ name: "Jo", age: 15 });
+  assertTrue(result.valid === false, "Should be invalid");
+  assertTrue(result.error! && result.error.length > 0, "Should have errors");
+
+  // Check that errors have path information
+  result.error!.forEach((error) => {
+    assertTrue(Array.isArray(error.path), "Error should have path array");
+  });
 });
 
 // Edge Cases
 console.log("\n🔍 Edge Cases:");
 
 runTest("should handle empty string validation", () => {
-  const validator = new StringValidator("", "Name");
-  const result = validator.required().maxLength(10).validate();
+  const validator = stringValidator().max(10);
+  const result = validator.validate("");
   assertTrue(
-    result.isValid === true,
+    result.valid === true,
     "Should be valid for empty string within limit",
   );
 });
 
 runTest("should handle zero number validation", () => {
-  const validator = new NumberValidator(0, "Count");
-  const result = validator.min(0).max(100).validate();
-  assertTrue(result.isValid === true, "Should be valid for zero within range");
+  const validator = numberValidator().min(0).max(100);
+  const result = validator.validate(0);
+  assertTrue(result.valid === true, "Should be valid for zero within range");
 });
 
 runTest("should handle boundary values", () => {
-  const validator = new StringValidator("exact", "Name");
-  const result = validator.maxLength(5).validate();
+  const validator = stringValidator().max(5);
+  const result = validator.validate("exact");
+  assertTrue(result.valid === true, "Should be valid for exact boundary value");
+});
+
+runTest("should handle null object", () => {
+  const validator = objectValidator({
+    name: stringValidator().min(2),
+    age: numberValidator().min(0),
+  });
+  const result = validator.validate(null as any);
+  assertTrue(result.valid === false, "Should be invalid for null object");
+  assertTrue(result.error! && result.error.length > 0, "Should have error");
   assertTrue(
-    result.isValid === true,
-    "Should be valid for exact boundary value",
+    result.error![0].type === "typeMismatch",
+    "Error should be typeMismatch type",
   );
 });
 
