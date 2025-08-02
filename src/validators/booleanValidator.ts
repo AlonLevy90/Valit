@@ -1,31 +1,39 @@
-import { Validator } from "../types";
-import markOptional from "./baseValidator";
+import { errorBuilder } from "../error/errorBuilder";
+import { BooleanSchema } from "../types";
 
 function BooleanValidator() {
   const rules: ((value: unknown) => string | undefined)[] = [];
+  let isOptional = false;
 
-  const validator: Validator<boolean> = {
-    validate(value: unknown) {
-      if (typeof value !== "boolean") {
+  const validator: BooleanSchema = {
+    validate(input) {
+      if (isOptional && !input) {
+        return { valid: true, input };
+      } else if (!input) {
         return {
           valid: false,
-          error: `expected boolean, received ${typeof value}`,
+          error: [errorBuilder("required", ["boolean", typeof input], [])],
+        };
+      }
+      if (typeof input !== "boolean") {
+        return {
+          valid: false,
+          error: [errorBuilder("typeMismatch", ["boolean", typeof input], [])],
         };
       }
       for (const rule of rules) {
-        const error = rule(value);
+        const error = rule(input);
         if (error) {
-          return { valid: false, errors: error };
+          return { valid: false, error: [error] };
         }
       }
-      return { valid: true, data: value };
+      return { valid: true, input };
     },
-  };
-
-  const builder = {
     optional() {
-      return markOptional(validator);
+      isOptional = true;
+      return validator;
     },
   };
+  return validator;
 }
 export default BooleanValidator;

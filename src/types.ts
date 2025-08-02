@@ -23,7 +23,12 @@ interface NumberSchema extends Schema<number> {
   optional(): NumberSchema;
 }
 
+interface BooleanSchema extends Schema<boolean> {
+  optional(): BooleanSchema;
+}
+
 export {
+  BooleanSchema,
   NumberSchema,
   Schema,
   StringSchema,

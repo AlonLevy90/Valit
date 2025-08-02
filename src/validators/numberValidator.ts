@@ -7,18 +7,24 @@ function numberValidator() {
 
   const schema: NumberSchema = {
     validate(input) {
-      if (isOptional && input === undefined) {
+      if (isOptional && !input) {
         return { valid: true, input };
-      } else if (!input || typeof input !== "number") {
+      } else if (!input) {
         return {
           valid: false,
           error: [errorBuilder("required", ["number", typeof input], [])],
         };
       }
+      if (typeof input !== "number") {
+        return {
+          valid: false,
+          error: [errorBuilder("typeMismatch", ["number", typeof input], [])],
+        };
+      }
       for (const rule of rules) {
-        const result = rule(input);
-        if (result) {
-          return { valid: false, error: [result] };
+        const error = rule(input);
+        if (error) {
+          return { valid: false, error: [error] };
         }
       }
       return { valid: true, input };
