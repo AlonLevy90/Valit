@@ -27,9 +27,16 @@ interface BooleanSchema extends Schema<boolean> {
   optional(): BooleanSchema;
 }
 
+interface ObjectSchema extends Schema<Record<string, unknown>> {
+  optional(): ObjectSchema;
+}
+
+type objectProps = Record<string, Schema<unknown>>;
 export {
   BooleanSchema,
   NumberSchema,
+  objectProps,
+  ObjectSchema,
   Schema,
   StringSchema,
   ValidationError,

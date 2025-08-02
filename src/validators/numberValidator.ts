@@ -1,7 +1,7 @@
 import { errorBuilder } from "../error/errorBuilder";
 import { NumberSchema, ValidationError } from "../types";
 
-function numberValidator() {
+export default function numberValidator() {
   const rules: ((input: number) => ValidationError | undefined)[] = [];
   let isOptional = false;
 
@@ -62,4 +62,3 @@ function numberValidator() {
   };
   return schema;
 }
-export default numberValidator;

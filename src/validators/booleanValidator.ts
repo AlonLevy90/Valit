@@ -1,14 +1,14 @@
 import { errorBuilder } from "../error/errorBuilder";
-import { BooleanSchema } from "../types";
+import { BooleanSchema, ValidationError, ValidationResult } from "../types";
 
-function BooleanValidator() {
-  const rules: ((value: unknown) => string | undefined)[] = [];
+export default function BooleanValidator() {
+  const rules: ((value: unknown) => ValidationError | undefined)[] = [];
   let isOptional = false;
 
   const validator: BooleanSchema = {
-    validate(input) {
+    validate(input): ValidationResult<boolean> {
       if (isOptional && !input) {
-        return { valid: true, input };
+        return { valid: true, value: input };
       } else if (!input) {
         return {
           valid: false,
@@ -27,7 +27,7 @@ function BooleanValidator() {
           return { valid: false, error: [error] };
         }
       }
-      return { valid: true, input };
+      return { valid: true, value: input };
     },
     optional() {
       isOptional = true;
@@ -36,4 +36,3 @@ function BooleanValidator() {
   };
   return validator;
 }
-export default BooleanValidator;

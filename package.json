@@ -1,19 +1,47 @@
 {
   "name": "valit",
   "version": "1.0.0",
+  "description": "A lightweight TypeScript validation library with centralized error handling",
   "type": "module",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "start": "tsx src/index.ts",
     "dev": "nodemon --exec tsx src/index.ts",
     "test": "tsx src/__tests__/validator.test.ts",
     "test:watch": "nodemon --exec tsx src/__tests__/validator.test.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "validation",
+    "typescript",
+    "schema",
+    "validator",
+    "type-checking",
+    "form-validation"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/valit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/valit/issues"
+  },
+  "homepage": "https://github.com/yourusername/valit#readme",
   "devDependencies": {
     "@types/node": "^24.1.0",
     "@vitest/ui": "^3.2.4",

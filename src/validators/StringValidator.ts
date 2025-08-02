@@ -1,11 +1,13 @@
 import { errorBuilder } from "../error/errorBuilder";
 import { Schema, StringSchema, ValidationResult } from "../types";
 
-export function string(): Schema<string> {
+export default function stringValidator(): Schema<string> {
   const rules: ((input: string) => ValidationResult<string> | undefined)[] = [];
   let isOptional = false;
 
   const schema: StringSchema = {
+    //TODO extract common code with basic validators 
+    // TODO consider decorator for optional and other rule
     validate(input: string): ValidationResult<string> {
       if (isOptional && input === undefined) {
         return {

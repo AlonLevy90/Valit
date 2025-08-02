@@ -1,6 +1,6 @@
 interface ValidationError {
   message: string;
-  path?: string[];
+  path: string[];
   type: ErrorType;
 }
 
