@@ -1,64 +1,59 @@
-import { NumberSchema } from "../types";
+import { errorBuilder } from "../error/errorBuilder";
+import { NumberSchema, ValidationError } from "../types";
 
 function numberValidator() {
-  const rules: ((value: number) => string | undefined)[] = [];
-  const isOptional = false;
+  const rules: ((input: number) => ValidationError | undefined)[] = [];
+  let isOptional = false;
 
   const schema: NumberSchema = {
-    validate(value: number) {
-      if (isOptional && value === undefined) {
-        return { valid: true, value };
-      } else if (!value) {
+    validate(input) {
+      if (isOptional && input === undefined) {
+        return { valid: true, input };
+      } else if (!input || typeof input !== "number") {
         return {
           valid: false,
-          error: [
-            {
-              message: `Expected a number, got ${typeof value}`,
-              path: [],
-              type: "required",
-            },
-          ],
+          error: [errorBuilder("required", ["number", typeof input], [])],
         };
       }
-      if (typeof value !== "number") {
-        return {
-          valid: false,
-          error: [
-            {
-              message: `Expected a number, got ${typeof value}`,
-              path: [],
-              type: "",
-            },
-          ],
-        };
+      for (const rule of rules) {
+        const result = rule(input);
+        if (result) {
+          return { valid: false, error: [result] };
+        }
       }
-
-      return { valid: true, value };
+      return { valid: true, input };
     },
-  };
-
-  const builder = {
     min(min: number) {
-      rules.push((value) => {
-        if (value < min) {
-          return `Expected a number greater than or equal to ${min}, got ${value}`;
+      rules.push((input: number) => {
+        if (input < min) {
+          return errorBuilder(
+            "ruleViolation",
+            [`minimum of ${min}`, input.toString()],
+            [],
+          );
         }
         return undefined;
       });
-      return builder;
+      return schema;
     },
     max(max: number) {
-      rules.push((value) => {
-        if (value > max) {
-          return `Expected a number less than or equal to ${max}, got ${value}`;
+      rules.push((input: number) => {
+        if (input > max) {
+          return errorBuilder(
+            "ruleViolation",
+            [`maximum of ${max}`, input.toString()],
+            [],
+          );
         }
         return undefined;
       });
-      return builder;
+      return schema;
     },
     optional() {
-      return markOptional(validator);
+      isOptional = true;
+      return schema;
     },
   };
+  return schema;
 }
 export default numberValidator;
